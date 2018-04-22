@@ -20,6 +20,7 @@
  ******************************************************************/
 
 #include "appmenuplugin.h"
+#include "appmenuthing.h"
 #include "appmenumodel.h"
 
 #include <QtQml>
@@ -28,5 +29,6 @@
 void AppmenuPlugin::registerTypes(const char *uri)
 {
     Q_ASSERT(uri == QLatin1String("org.kde.plasma.private.localmenu"));
+    qmlRegisterType<AppMenuApplet>(uri, 1, 0, "AppMenuThing");
     qmlRegisterType<AppMenuModel>(uri, 1, 0, "AppMenuModel");
 }

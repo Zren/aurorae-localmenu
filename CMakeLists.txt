@@ -103,6 +103,7 @@ add_subdirectory(libdbusmenuqt)
 
 
 set(appmenuapplet_SRCS
+    appmenuthing.cpp
     appmenumodel.cpp
     appmenuplugin.cpp
 )

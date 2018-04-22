@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include <Plasma/Applet>
+#include <QObject>
 #include <QPointer>
 
 class KDBusMenuImporter;
@@ -29,7 +29,7 @@ class QQuickItem;
 class QMenu;
 class AppMenuModel;
 
-class AppMenuApplet : public Plasma::Applet
+class AppMenuApplet : public QObject
 {
     Q_OBJECT
 
@@ -47,10 +47,10 @@ public:
         CompactView
     };
 
-    explicit AppMenuApplet(QObject *parent, const QVariantList &data);
+    explicit AppMenuApplet(QObject *parent = 0);
     ~AppMenuApplet() override;
 
-    void init() override;
+    // void init() override;
 
     int currentIndex() const;
 

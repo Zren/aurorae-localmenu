@@ -19,10 +19,11 @@
  *
  */
 
-#include "appmenuapplet.h"
-#include "../plugin/appmenumodel.h"
+#include "appmenuthing.h"
+#include "appmenumodel.h"
 
 #include <QAction>
+#include <QObject>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMouseEvent>
@@ -39,8 +40,8 @@ int AppMenuApplet::s_refs = 0;
 
 static const QString s_viewService(QStringLiteral("org.kde.kappmenuview"));
 
-AppMenuApplet::AppMenuApplet(QObject *parent, const QVariantList &data)
-    : Plasma::Applet(parent, data)
+AppMenuApplet::AppMenuApplet(QObject *parent)
+    : QObject(parent)
 {
     ++s_refs;
     //if we're the first, regster the service
@@ -49,35 +50,35 @@ AppMenuApplet::AppMenuApplet(QObject *parent, const QVariantList &data)
                 QDBusConnectionInterface::QueueService,
                 QDBusConnectionInterface::DontAllowReplacement);
     }
-    /*it registers or unregisters the service when the destroyed value of the applet change,
-      and not in the dtor, because:
-      when we "delete" an applet, it just hides it for about a minute setting its status
-      to destroyed, in order to be able to do a clean undo: if we undo, there will be
-      another destroyedchanged and destroyed will be false.
-      When this happens, if we are the only appmenu applet existing, the dbus interface
-      will have to be registered again*/
-    connect(this, &Applet::destroyedChanged, this, [this](bool destroyed) {
-        if (destroyed) {
-            //if we were the last, unregister
-            if (--s_refs == 0) {
-                QDBusConnection::sessionBus().interface()->unregisterService(s_viewService);
-            }
-        } else {
-            //if we're the first, regster the service
-            if (++s_refs == 1) {
-                QDBusConnection::sessionBus().interface()->registerService(s_viewService,
-                    QDBusConnectionInterface::QueueService,
-                    QDBusConnectionInterface::DontAllowReplacement);
-            }
-        }
-    });
+    // /*it registers or unregisters the service when the destroyed value of the applet change,
+    //   and not in the dtor, because:
+    //   when we "delete" an applet, it just hides it for about a minute setting its status
+    //   to destroyed, in order to be able to do a clean undo: if we undo, there will be
+    //   another destroyedchanged and destroyed will be false.
+    //   When this happens, if we are the only appmenu applet existing, the dbus interface
+    //   will have to be registered again*/
+    // connect(this, &Applet::destroyedChanged, this, [this](bool destroyed) {
+    //     if (destroyed) {
+    //         //if we were the last, unregister
+    //         if (--s_refs == 0) {
+    //             QDBusConnection::sessionBus().interface()->unregisterService(s_viewService);
+    //         }
+    //     } else {
+    //         //if we're the first, regster the service
+    //         if (++s_refs == 1) {
+    //             QDBusConnection::sessionBus().interface()->registerService(s_viewService,
+    //                 QDBusConnectionInterface::QueueService,
+    //                 QDBusConnectionInterface::DontAllowReplacement);
+    //         }
+    //     }
+    // });
 }
 
 AppMenuApplet::~AppMenuApplet() = default;
 
-void AppMenuApplet::init()
-{
-}
+// void AppMenuApplet::init()
+// {
+// }
 
 AppMenuModel *AppMenuApplet::model() const
 {
@@ -195,9 +196,9 @@ void AppMenuApplet::trigger(QQuickItem *ctx, int idx)
         const auto &geo = ctx->window()->screen()->availableVirtualGeometry();
 
         QPoint pos = ctx->window()->mapToGlobal(ctx->mapToScene(QPointF()).toPoint());
-        if (location() == Plasma::Types::TopEdge) {
-            pos.setY(pos.y() + ctx->height());
-        }
+        // if (location() == Plasma::Types::TopEdge) {
+        //     pos.setY(pos.y() + ctx->height());
+        // }
 
         actionMenu->adjustSize();
 
@@ -208,7 +209,7 @@ void AppMenuApplet::trigger(QQuickItem *ctx, int idx)
             actionMenu->installEventFilter(this);
         }
 
-        setStatus(Plasma::Types::AcceptingInputStatus);
+        // setStatus(Plasma::Types::AcceptingInputStatus);
         actionMenu->winId();//create window handle
         actionMenu->windowHandle()->setTransientParent(ctx->window());
 
@@ -216,7 +217,7 @@ void AppMenuApplet::trigger(QQuickItem *ctx, int idx)
 
         //we can return to passive immediately, an autohide panel will stay open whilst
         //any transient window is showing
-        setStatus(Plasma::Types::PassiveStatus);
+        // setStatus(Plasma::Types::PassiveStatus);
 
         if (view() == FullView) {
             // hide the old menu only after showing the new one to avoid brief flickering
@@ -289,6 +290,6 @@ bool AppMenuApplet::eventFilter(QObject *watched, QEvent *event)
     return false;
 }
 
-K_EXPORT_PLASMA_APPLET_WITH_JSON(appmenu, AppMenuApplet, "metadata.json")
+// K_EXPORT_PLASMA_APPLET_WITH_JSON(appmenu, AppMenuApplet, "metadata.json")
 
-#include "appmenuapplet.moc"
+// #include "appmenuapplet.moc"
