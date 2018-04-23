@@ -19,7 +19,7 @@ import QtQuick.Layouts 1.1
 import org.kde.kwin.decoration 0.1
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 2.0 as PlasmaComponents
-import org.kde.plasma.private.appmenu 1.0 as AppMenuPrivate
+import org.kde.plasma.private.localmenu 1.0 as AppMenuPrivate
 
 Decoration {
     id: root
@@ -175,20 +175,20 @@ Decoration {
             leftMargin: auroraeTheme.titleBorderLeft
             rightMargin: auroraeTheme.titleBorderRight
         }
-        Behavior on color {
-            enabled: root.animate
-            ColorAnimation {
-                duration: auroraeTheme.animationTime
-            }
-        }
+        // Behavior on color {
+        //     enabled: root.animate
+        //     ColorAnimation {
+        //         duration: auroraeTheme.animationTime
+        //     }
+        // }
 
         opacity: appMenuArea.shown ? 0.3 : 1
-        Behavior on opacity {
-            enabled: root.animate
-            NumberAnimation {
-                duration: appMenuArea.showDuration
-            }
-        }
+        // Behavior on opacity {
+        //     enabled: root.animate
+        //     NumberAnimation {
+        //         duration: appMenuArea.showDuration
+        //     }
+        // }
     }
 
     Item { // Neither this nor MouseArea works for a "hover" area.
@@ -197,20 +197,20 @@ Decoration {
         anchors.bottom: caption.bottom
         anchors.left: leftButtonGroup.right
         anchors.leftMargin: auroraeTheme.buttonSpacing * auroraeTheme.buttonSizeFactor
-        width: appMenuButtonsLayout.width <= caption.width ? appMenuButtonsLayout.width : caption.width
+        width: appMenuButtonsGrid.width <= caption.width ? appMenuButtonsGrid.width : caption.width
 
         opacity: appMenuArea.shown ? 1 : 0
-        Behavior on opacity {
-            enabled: root.animate
-            NumberAnimation {
-                duration: appMenuArea.showDuration
-            }
-        }
+        // Behavior on opacity {
+        //     enabled: root.animate
+        //     NumberAnimation {
+        //         duration: appMenuArea.showDuration
+        //     }
+        // }
 
         readonly property int showDuration: 200
         // readonly property int showDuration: auroraeTheme.animationTime
 
-        readonly property bool shown: decoration.client.active
+        readonly property bool shown: true //decoration.client.active
         // readonly property alias shown: appMenuHover.containsMouse
         // MouseArea {
         //     id: appMenuHover
@@ -219,30 +219,76 @@ Decoration {
         //     hoverEnabled: true
         // }
 
-        RowLayout {
-            id: appMenuButtonsLayout
+        AppMenuPrivate.AppMenuThing {
+            id: appMenuThing
+        }
+
+        AppMenuPrivate.AppMenuModel {
+            id: appMenuModel
+            onRequestActivateIndex: appMenuThing.requestActivateIndex(index)
+            Component.onCompleted: {
+                appMenuThing.model = appMenuModel
+            }
+        }
+
+        // So we can show mnemonic underlines only while Alt is pressed
+        PlasmaCore.DataSource {
+            id: keystateSource
+            engine: "keystate"
+            connectedSources: ["Alt"]
+        }
+
+        GridLayout {
+            id: appMenuButtonsGrid
             anchors.fill: parent
+
+            Layout.minimumWidth: implicitWidth
+            //Layout.minimumHeight: implicitHeight
+            
+            flow: GridLayout.LeftToRight
+            rowSpacing: units.smallSpacing
+            columnSpacing: units.smallSpacing
+
+            Component.onCompleted: {
+                appMenuThing.buttonGrid = appMenuButtonsGrid
+
+                // using a Connections {} doesn't work for some reason in Qt >= 5.8
+                appMenuThing.requestActivateIndex.connect(function (index) {
+                    var idx = Math.max(0, Math.min(buttonRepeater.count - 1, index))
+                    var button = buttonRepeater.itemAt(index)
+                    if (button) {
+                        button.clicked()
+                    }
+                });
+            }
 
             Repeater {
                 id: buttonRepeater
-                model: [
-                    {activeMenu: '&File'},
-                    {activeMenu: '&View'},
-                    {activeMenu: '&Help'}
-                ]
+                model: appMenuModel
 
                 PlasmaComponents.ToolButton {
                     readonly property int buttonIndex: index
 
                     Layout.preferredWidth: minimumWidth
                     Layout.fillHeight: true
-                    // text: activeMenu
-                    text: modelData.activeMenu
+                    text: {
+                        var text = activeMenu;
+
+                        var alt = keystateSource.data.Alt;
+                        if (!alt || !alt.Pressed) {
+                            // StyleHelpers.removeMnemonics
+                            text = text.replace(/([^&]*)&(.)([^&]*)/g, function (match, p1, p2, p3) {
+                                return p1.concat(p2, p3);
+                            });
+                        }
+
+                        return text;
+                    }
                     // fake highlighted
-                    // checkable: plasmoid.nativeInterface.currentIndex === index
-                    // checked: checkable
+                    checkable: appMenuThing.currentIndex === index
+                    checked: checkable
                     onClicked: {
-                        // plasmoid.nativeInterface.trigger(this, index)
+                        appMenuThing.trigger(this, index)
                     }
                 }
             }
