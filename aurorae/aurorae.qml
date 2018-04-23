@@ -15,8 +15,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 import QtQuick 2.0
+import QtQuick.Layouts 1.1
 import org.kde.kwin.decoration 0.1
 import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.plasma.components 2.0 as PlasmaComponents
+import org.kde.plasma.private.appmenu 1.0 as AppMenuPrivate
 
 Decoration {
     id: root
@@ -178,7 +181,94 @@ Decoration {
                 duration: auroraeTheme.animationTime
             }
         }
+
+        opacity: appMenuArea.shown ? 0.3 : 1
+        Behavior on opacity {
+            enabled: root.animate
+            NumberAnimation {
+                duration: appMenuArea.showDuration
+            }
+        }
     }
+
+    Item { // Neither this nor MouseArea works for a "hover" area.
+        id: appMenuArea
+        anchors.top: caption.top
+        anchors.bottom: caption.bottom
+        anchors.left: leftButtonGroup.right
+        anchors.leftMargin: auroraeTheme.buttonSpacing * auroraeTheme.buttonSizeFactor
+        width: appMenuButtonsLayout.width <= caption.width ? appMenuButtonsLayout.width : caption.width
+
+        opacity: appMenuArea.shown ? 1 : 0
+        Behavior on opacity {
+            enabled: root.animate
+            NumberAnimation {
+                duration: appMenuArea.showDuration
+            }
+        }
+
+        readonly property int showDuration: 200
+        // readonly property int showDuration: auroraeTheme.animationTime
+
+        readonly property bool shown: decoration.client.active
+        // readonly property alias shown: appMenuHover.containsMouse
+        // MouseArea {
+        //     id: appMenuHover
+        //     anchors.fill: parent
+        //     acceptedButtons: Qt.NoButton
+        //     hoverEnabled: true
+        // }
+
+        RowLayout {
+            id: appMenuButtonsLayout
+            anchors.fill: parent
+
+            Repeater {
+                id: buttonRepeater
+                model: [
+                    {activeMenu: '&File'},
+                    {activeMenu: '&View'},
+                    {activeMenu: '&Help'}
+                ]
+
+                PlasmaComponents.ToolButton {
+                    readonly property int buttonIndex: index
+
+                    Layout.preferredWidth: minimumWidth
+                    Layout.fillHeight: true
+                    // text: activeMenu
+                    text: modelData.activeMenu
+                    // fake highlighted
+                    // checkable: plasmoid.nativeInterface.currentIndex === index
+                    // checked: checkable
+                    onClicked: {
+                        // plasmoid.nativeInterface.trigger(this, index)
+                    }
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true 
+            }
+        }
+
+        // AppMenuPrivate.AppMenuModel {
+        //     id: appMenuModel
+        //     // onRequestActivateIndex: plasmoid.nativeInterface.requestActivateIndex(index)
+        //     Component.onCompleted: {
+        //         // plasmoid.nativeInterface.model = appMenuModel
+        //     }
+        // }
+    }
+
+        
+
+    
+
+
+
+
+
     PlasmaCore.FrameSvgItem {
         id: innerBorder
         anchors {
